@@ -19,4 +19,14 @@ const generateHashPassword = async (password) => {
 
 }
 
-export { jwtLogin, generateHashPassword }
+const authGuard = async (req, res, next) => {
+    const token = req.headers.authorization.split(" ")[1];
+    var decoded = await jwt.verify(token, process.env.SECRET);
+    if (decoded.user[0].role == 'admin') {
+        next()
+    } else {
+        res.status(400).send({ message: 'Invalid role' })
+    }
+}
+
+export { jwtLogin, generateHashPassword, authGuard }

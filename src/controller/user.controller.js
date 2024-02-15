@@ -1,6 +1,5 @@
 import { generateHashPassword, jwtLogin } from "../middlewares/jwtlogin.js";
 import { User } from "../model/user.schema.js"
-import jwt from 'jsonwebtoken'
 
 const getUser = async (req, res) => {
     const user = await User.find();
@@ -8,19 +7,17 @@ const getUser = async (req, res) => {
 }
 
 const createUser = async (req, res) => {
-    const { name, email, password } = req.body
+    const { name, email, password, role } = req.body
     const hashP = await generateHashPassword(password);
     const user = new User({
         name,
         email,
-        password: hashP
+        password: hashP,
+        role
     })
     try {
         const users = await user.save()
-        console.log(users);
-        const token = await jwtLogin(users)
-        console.log(token);
-        res.send({ data: users, token: token })
+        res.send({ data: users })
     } catch (error) {
         console.log(error);
     }
@@ -32,13 +29,12 @@ const loginUser = async (req, res) => {
         if (!user) {
             res.status(400).send({ message: 'user not found' });
         }
-        const token = req.headers.authorization.split(" ")[1];
-        var decoded = await jwt.verify(token, process.env.SECRET);
-        if (decoded) {
-            res.send({ decoded: decoded })
+        const token = await jwtLogin(user)
+        if (token) {
+            res.send({ data: user, token: token })
+        } else {
+            res.send({ message: 'Invalid Token' })
         }
-        res.send({ message: 'Invalid Token' })
-
     } catch (error) {
         res.send({ error: error })
     }
